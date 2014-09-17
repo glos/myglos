@@ -80,14 +80,24 @@ function filterValueSelect() {
   },100);
 }
 
-function addToMap() {
-  var c = catalog[$(this).data('idx')];
-  var lyrName = $(this).data('name');
+function prepareAddToMap() {
+  var idx  = $(this).data('idx');
+  var name = $(this).data('name');
+  var c    = _.findWhere(catalog,{idx : idx});
+  if (!c.times) {
+    wmsGetCaps(c.url,idx,name);
+  }
+  else {
+    addToMap(c,name);
+  }
+}
+
+function addToMap(c,lyrName) {
   var obs = false;
   var lc = 0;
   if (_.isEmpty(map.getLayersByName(c.name + '-' + lyrName))) {
     if (!mapDate) {
-      mapDate = isoDateToDate(c.temporal[0]);
+      mapDate = isoDateToDate(c.times[c.times.length - 1]);
     }
     if (c.layers[lyrName] == 'OBSERVATION') {
       obs = true;
@@ -105,7 +115,7 @@ function addToMap() {
         ,url    : c.url
         ,layers : lyrName
         ,styles : c.layers[lyrName]
-        ,times  : c.temporal
+        ,times  : c.times
         ,bbox   : new OpenLayers.Bounds(c.spatial).transform(proj4326,proj3857)
       });
     }
@@ -225,7 +235,7 @@ $(document).ready(function() {
     ,iDisplayLength : 50
     ,sScrollY       : $(window).height() - activeMapLayersTableOffset - queryResultsFooterOffset
     ,fnDrawCallback : function() {
-      $('#results .table-wrapper td a').on('click', addToMap);
+      $('#results .table-wrapper td a').on('click', prepareAddToMap);
       $('.dataTables_scrollHead').hide();
     }
     ,ajax       : function (data,callback,settings) {
@@ -398,26 +408,25 @@ function makeCatalog(data) {
        category  : 'modis'
       ,org_model : 'GLOS'
       ,storm     : 'none'
-      ,idx       : i++
+      ,idx       : o.cswId
       ,name      : o.title
       ,spatial   : o.spatial.slice()
       ,temporal  : o.temporal.slice()
       ,abstract  : o.abstract
       ,layers    : []
     };
-    var wms     = _.findWhere(data[0].services,{id : 'OGC-WMS'});
+    var wms     = _.findWhere(o.services,{id : 'OGC-WMS'});
     var getCaps = _.findWhere(wms.operations,{name : 'GetCapabilities'});
     var layers  = [];
     if (wms && getCaps) {
       d.url = getCaps.url;
-      _.each(_.filter(_.pluck(o.dimensions,'niceName'),function(o){return !_.isEmpty(o)},function(o){return !_.isEmpty(o)}),function(o) {
-        o = o.split(/(char|double|int)$/).shift();
-        if (!/^(lat|lon|crs|time)$/i.test(o)) {
-          if (!name2Color[o]) {
-            name2Color[o] = buttonClasses[_.size(name2Color) % buttonClasses.length];
+      _.each(_.filter(_.map(o.dimensions,function(o){return [o.name.split(' (').shift(),o.niceName.split(/(double|int)$/).shift()]}),function(o){return !_.isEmpty(o[0])}),function(o) {
+        if (!/^(latitude|longitude|time)$/i.test(o[0])) {
+          if (!name2Color[o[0]]) {
+            name2Color[o[0]] = buttonClasses[_.size(name2Color) % buttonClasses.length];
           }
-          d.layers[o] = '';
-          layers.push('<a href="#" data-idx="' + d.idx + '" data-name="' + o + '" class="btn btn-' + name2Color[o] + '">' + o + '</a>');
+          d.layers[o[1]] = '';
+          layers.push('<a href="#" data-idx="' + d.idx + '" data-name="' + o[1] + '" class="btn btn-' + name2Color[o[0]] + '">' + o[0] + '</a>');
         }
       });
     }
@@ -514,7 +523,7 @@ function addWMS(d) {
       ,transparent : true
       ,styles      : d.styles
       ,format      : 'image/png'
-      ,TIME        : mapDate.format('UTC:yyyy-mm-dd"T"HH:00:00')
+      ,TIME        : getNearestDate(mapDate,d.times).format('UTC:yyyy-mm-dd"T"HH:MM:00')
     }
     ,{
        isBaseLayer      : false
@@ -536,6 +545,7 @@ function addWMS(d) {
   lyr.events.register('loadstart',this,function(e) {
     $('#active-layers a[data-name="' + e.object.name + '"] img').show();
     $('#active-layers a[data-name="' + e.object.name + '"] span').hide();
+    $('#active-layers span[data-name="' + e.object.name + '"]').html(e.object.params.TIME);
   });
   lyr.events.register('loadend',this,function(e) {
     if (e.object.activeQuery == 0) {
@@ -578,7 +588,7 @@ function addObs(d) {
             + '&offering=' + r.getObs.offering + k
             + '&procedure=' + r.getObs.procedure + k
             + '&observedProperty=' + d.layers
-            + '&eventTime=' + isoDateToDate(d.times[0]).format('UTC:yyyy-mm-dd"T"HH:00:00') + '/' + isoDateToDate(d.times[1]).format('UTC:yyyy-mm-dd"T"HH:00:00')
+            + '&eventTime=' + isoDateToDate(d.times[0]).format('UTC:yyyy-mm-dd"T"HH:MM:00') + '/' + isoDateToDate(d.times[1]).format('UTC:yyyy-mm-dd"T"HH:MM:00')
           ,name : k
         };
       });
@@ -611,8 +621,8 @@ function getLayerLegend(name) {
   return lyr.getFullRequestString({
      REQUEST : 'GetLegendGraphic'
     ,LAYER   : lyr.params.LAYERS
-    ,TIME    : mapDate.format('UTC:yyyy-mm-dd"T"HH:00:00')
-  });
+    ,TIME    : getNearestDate(mapDate,lyr.times).format('UTC:yyyy-mm-dd"T"HH:MM:00')
+  }).replace(/getmap/i,'GetLegendGraphic');
 }
 
 function toggleLayerVisibility(name) {
@@ -629,10 +639,23 @@ function setDate(dt) {
   $.each($('#active-layers table tbody tr td:first-child'),function() {
     var lyr = map.getLayersByName($(this).text())[0];
     if (lyr.DEFAULT_PARAMS) {
-      lyr.mergeNewParams({TIME : mapDate.format('UTC:yyyy-mm-dd"T"HH:00:00')});
+      lyr.mergeNewParams({TIME : getNearestDate(mapDate,lyr.times).format('UTC:yyyy-mm-dd"T"HH:MM:00')});
     }
   });
   plot();
+}
+
+function getNearestDate(dt,times) {
+  // find nearest time w/o going over
+  var t1 = new Date(dt.getTime());
+  var t  = new Date(dt.getTime());
+  for (var i = 0; i < times.length; i++) {
+    var t0 = isoDateToDate(times[i]).getTime();
+    if (t0 <= t1) {
+      t = new Date(t0);
+    } 
+  }
+  return t;
 }
 
 function clearMap() {
@@ -747,7 +770,7 @@ function query(xy) {
       ,HEIGHT       : map.size.h
       ,X            : Math.round(xy.x)
       ,Y            : Math.round(xy.y)
-      ,TIME         : new Date($('#time-slider').data('slider').min).format('UTC:yyyy-mm-dd"T"HH:00:00') + '/' + new Date($('#time-slider').data('slider').max).format('UTC:yyyy-mm-dd"T"HH:00:00')
+      ,TIME         : new Date($('#time-slider').data('slider').min).format('UTC:yyyy-mm-dd"T"HH:MM:00') + '/' + new Date($('#time-slider').data('slider').max).format('UTC:yyyy-mm-dd"T"HH:MM:00')
     });
     l.activeQuery++;
     $.ajax({
@@ -852,11 +875,13 @@ function plot() {
   }
 }
 
-function wmsGetCaps(u) {
-  OpenLayers.Request.issue({
-     url      : 'get.php?' + u
-    ,callback : function(r) {
-      var caps = new OpenLayers.Format.WMSCapabilities().read(r.responseText);
+function wmsGetCaps(url,idx,name) {
+  $.ajax({
+     url     : 'get.php?' + url
+    ,idx     : idx
+    ,name    : name
+    ,success : function(r) {
+      var caps = new OpenLayers.Format.WMSCapabilities().read(r);
       if (!caps || !caps.capability) {
         alert('There was an error querying this data service.');
         return;
@@ -913,11 +938,14 @@ function wmsGetCaps(u) {
           ,name   : caps.capability.layers[i].name
           ,bbox   : caps.capability.layers[i].llbbox
           ,url    : caps.capability.request.getmap.get.href
-          ,styles : styles
-          ,times  : times
+          ,styles : styles.sort()
+          ,times  : times.sort()
         });
       }
-      console.dir(layers);
+      // The times should be uniform for all datasets, so pick off the 1st.
+      var c = _.findWhere(catalog,{idx : this.idx});
+      c.times = layers[0].times;
+      addToMap(c,this.name);
     }
   });
 }

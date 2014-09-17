@@ -127,7 +127,7 @@ function addToMap(c,lyrName) {
     syncTimeSlider(c.temporal);
 
     var title = obs ? '' : 'title="<img src=\'' + getLayerLegend(lyrName) + '\' alt=\'\'>"';
-    var rowHtml = '<tr data-toggle="tooltip" data-placement="right" data-html="true" ' + title + '><td title="' + lyrName + '"><div>' + lyrName + '<span data-name-timestamp="' + lyrName + '"></span><a href="#" title="Zoom To" data-name="' + lyrName + '"><span class="glyphicon glyphicon-zoom-in"></span><img src="./img/loading.gif"></a><a href="#" class="popover-link" data-toggle="popover" title="' + lyrName + '" data-html= "true" data-content="' + c.tSpan + '\n' + '<a target=\'_blank\' href=\'' + c.url + '\'>' + c.url + '</a>"><span class="glyphicon glyphicon-info-sign"></span></a></div></td>';
+    var rowHtml = '<tr data-toggle="tooltip" data-placement="right" data-html="true" ' + title + '><td title="' + lyrName + '"><div><span data-field="timestamp" data-name="' + lyrName + '"></span>' + lyrName + '<a href="#" title="Zoom To" data-name="' + lyrName + '"><span class="glyphicon glyphicon-zoom-in"></span><img src="./img/loading.gif"></a><a href="#" class="popover-link" data-toggle="popover" title="' + lyrName + '" data-html= "true" data-content="' + c.tSpan + '\n' + '<a target=\'_blank\' href=\'' + c.url + '\'>' + c.url + '</a>"><span class="glyphicon glyphicon-info-sign"></span></a></div></td>';
     rowHtml += '<td class="checkbox-cell"><input type="checkbox" checked value="' + lyrName + '" /></td>';
     $('#active-layers table tbody').append(rowHtml);
     $('#active-layers input:checkbox').off('click');
@@ -545,7 +545,7 @@ function addWMS(d) {
   lyr.events.register('loadstart',this,function(e) {
     $('#active-layers a[data-name="' + e.object.name + '"] img').show();
     $('#active-layers a[data-name="' + e.object.name + '"] span').hide();
-    $('#active-layers span[data-name-timestamp="' + e.object.name + '"]').html('<br/>' + e.object.params.TIME);
+    $('#active-layers span[data-field="timestamp"][data-name="' + e.object.name + '"]').html(e.object.params.TIME + ' ');
   });
   lyr.events.register('loadend',this,function(e) {
     if (e.object.activeQuery == 0) {

@@ -1,0 +1,379 @@
+body{
+	padding-top 	: 70px;
+	overflow-x  	: hidden;
+	overflow-y 		: hidden;
+	font-size 		: 12px;
+	background-color: #fff;
+	background-image: -webkit-linear-gradient(left, #fff, #85c1de);
+	background-image:    -moz-linear-gradient(left, #fff, #85c1de);
+	background-image:     -ms-linear-gradient(left, #fff, #85c1de);
+	background-image:      -o-linear-gradient(left, #fff, #85c1de);
+	background-image:         linear-gradient(left, #fff, #85c1de);
+	color			: #777;
+}
+
+.btn {
+	font-size: 12px;
+}
+
+a {outline: 0!important;}
+
+.navbar {
+	background-color: #eee;
+	background-image: -webkit-linear-gradient(top, #fff, #eee);
+	background-image:    -moz-linear-gradient(top, #fff, #eee);
+	background-image:     -ms-linear-gradient(top, #fff, #eee);
+	background-image:      -o-linear-gradient(top, #fff, #eee);
+	background-image:         linear-gradient(to bottom, #fff, #eee);
+	height: 62px;
+	border-bottom: 1px solid #bdbcbd !important;
+}
+
+.navbar-brand img {
+	width		: 200px;
+	margin-left : 15px;
+	margin-top	: -4px;
+}
+
+ul.nav {
+	padding-top: 9px;
+}
+
+ul.nav li {
+	width: 158px;
+	height: 59px;
+	text-indent: -99999px;
+	margin-right: 5px;
+}
+
+ul.nav > li > a {
+	padding-top:29px;
+}
+
+ul.nav > li > a:hover, ul.nav > li.active > a:hover, ul.nav > li > a:focus {
+	background-color: transparent!important;
+}
+
+.navbar > .container-fluid > .navbar-collapse > .btn-group {
+	margin-top: 8px;
+}
+
+ul.nav li:first-child a {
+	background: url('img/grey_catalogue_tab.png') no-repeat;
+}
+
+ul.nav li:last-child a {
+	background: url('img/grey_map_view_tab.png') no-repeat;
+}
+
+ul.nav li:first-child.active a {
+	background: url('img/blue_catalogue_tab.png') no-repeat;
+}
+
+ul.nav li:last-child.active a {
+	background: url('img/blue_map_view_tab.png') no-repeat;
+}
+
+.col-md-7 {
+	text-align: center;
+}
+
+#catalogue .btn-group.bootstrap-select {
+	margin: 0 8px;
+}
+
+#categories {
+	margin: 15px;
+}
+
+.dropdown-menu.open span.text {
+	font-size: 12px !important;
+}
+
+button.btn.dropdown-toggle.selectpicker.btn-default {
+	padding-right: 30px !important;
+}
+
+#results h4 {
+	text-align: center;
+}
+
+.table {
+	margin-bottom: 0;
+	text-align: left;
+}
+
+.table-wrapper {
+	overflow-y	: auto;
+	overflow-x	: hidden;
+}
+
+.table-wrapper .tooltip-inner {
+	background-color: #fff;
+}
+
+#active-layers .table-wrapper a {
+	height: 26px;
+}
+
+#active-layers .table-wrapper a span.glyphicon-zoom-in {
+	font-size	: 20px;
+	margin-top	: 3px;
+}
+
+#active-layers .table-wrapper a span.glyphicon-info-sign {
+	font-size	: 18px;
+	margin-top	: 4px;
+}
+
+#active-layers .table-wrapper a.popover-link {
+	margin-right: 10px;
+}
+
+#active-layers .table-wrapper a img {
+	display		: none;
+	margin-top	: 3px;
+}
+
+#results {
+	margin-top: 15px;
+}
+
+#results div.title a {
+	color: #333;
+}
+
+#results > div > table,
+#active-layers > div > table {
+	table-layout: fixed;
+	border-top 	: none;
+}
+
+#results td,
+#active-layers > div > table > tbody > tr > td,
+#time-series-controls {
+	overflow-x		: hidden;
+	background-color: #ededed;
+	background-image: -webkit-linear-gradient(top, #fff, #ededed);
+	background-image:    -moz-linear-gradient(top, #fff, #ededed);
+	background-image:     -ms-linear-gradient(top, #fff, #ededed);
+	background-image:      -o-linear-gradient(top, #fff, #ededed);
+	background-image:         linear-gradient(to bottom, #fff, #ededed);
+
+}
+
+#results td:hover {
+	background-color: #d0dce2;
+	background-image: -webkit-linear-gradient(top, #e6f2f8, #d0dce2);
+	background-image:    -moz-linear-gradient(top, #e6f2f8, #d0dce2);
+	background-image:     -ms-linear-gradient(top, #e6f2f8, #d0dce2);
+	background-image:      -o-linear-gradient(top, #e6f2f8, #d0dce2);
+	background-image:         linear-gradient(to bottom, #e6f2f8, #d0dce2);
+}
+
+#results .title {
+	font-size		: 18px;
+	padding-bottom	: 5px;
+	display			: inline-block;
+
+}
+
+#results a.btn {
+	margin-top: 5px;
+}
+
+#results .download-data,
+#results .time-range {
+	float		: right;
+	font-size	: 15px;
+	margin-right: 10px;
+	display		: flex;
+}
+
+#results .download-data a,
+#results .time-range-label {
+	margin-top: 6px;
+}
+
+#results .download-data span,
+#results .time-range span {
+	margin-right: 5px;
+}
+
+#results .time-range input {
+	text-align	: center;
+	width		: 168px;
+	margin		: -1px 0 0 10px;
+	font-size	: 12px;
+}
+
+#results .thumbnail {
+	width	: 60px;
+	height	: 60px;
+	float	: right;
+	margin	: 4px 0 0 0;
+}
+
+#active-layers {
+	margin-top: 54px;
+}
+
+#active-layers table tbody tr td div {
+	overflow-x: hidden;
+}
+
+#active-layers table tbody tr td a {
+	float: right;
+}
+
+#active-layers button {
+	float		: right;
+	margin-top	: -37px;
+}
+
+.table-wrapper {
+	border: 1px solid #ddd;
+}
+
+.table-wrapper table,
+.table-wrapper table tbody tr td {
+	border-right: none;
+}
+
+.table-wrapper table,
+.table-wrapper table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+.table-wrapper table tbody tr:first-child td {
+	border-top: none;
+}
+
+.checkbox-cell {
+	width		: 37px;
+	text-align	: center;
+}
+
+#map {
+	border: 1px solid #edece8;
+	height: 100%;
+}
+
+#map-col {
+	margin-top: 15px;
+}
+
+#map-view-col {
+	display: none;
+}
+
+.slider {
+	width: 250px !important;
+	margin: 6px 20px;
+	z-index: 1000;
+}
+
+.slider .tooltip-inner {
+	max-width: 	none;
+}
+
+#time-slider-wrapper {
+	margin-top: -42px;
+	padding: 0;
+	text-align: center;
+}
+
+#time-slider-wrapper .form-control {
+	display: inline-block;
+	width: 106px;
+	padding: 0;
+	font-size: 10px;
+	text-align: center;
+	z-index: 1000;
+	position: relative;
+}
+
+#time-slider-wrapper {
+	display: none;
+}
+
+#time-series-div {
+	border: 1px solid #ccc;
+	margin-top: 8px;
+}
+
+#time-series-div #empty-placeholder {
+        position                : absolute;
+        margin-top              : -90px;
+        width                   : 100%;
+        text-align              : center;
+        font-size               : large;
+        padding-right   : 15px;
+	z-index: 10;
+}
+
+#time-series-controls {
+	overflow-y: hidden;
+}
+
+#time-series-controls p {
+	display: inline-block;
+	margin: 10px;
+}
+
+#time-series-controls button#clear-query {
+	float: right;
+	margin: 3px 5px 3px 0;
+}
+
+#time-series-controls .bootstrap-select {
+	position: absolute;
+	margin-top: 3px;
+}
+
+#time-series-graph {
+	height: 165px;
+	z-index: 100;
+}
+
+.dir {
+	z-index: 101;
+	pointer-events: none;
+}
+
+.olImageLoadError {
+	display: none;
+}
+
+.slider.slider-vertical {
+	position	: absolute;
+	top			: 0;
+	right		: -75px;
+	margin-top	: 130px;
+	display		: none;
+}
+
+.slider.slider-vertical .tooltip.right {
+	left: 55% !important;
+}
+
+.slider.slider-vertical .slider-track {
+	background: #BABABA;
+}
+
+.dataTables_wrapper.no-footer .dataTables_scrollBody {
+  border-bottom: none;
+}
+
+#active-layers .table-wrapper table tbody tr td > div {
+	height: 44px;
+}
+
+.modal-dialog {
+	margin: 19% auto;
+}
+
+.modal-content {
+	text-align	: center;
+	font-size	: 17px;
+}

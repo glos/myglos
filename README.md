@@ -1,4 +1,4 @@
-myglos
-======
+comt-ui
+=======
 
-Repository for MyGLOS
+IOOS Coastal and Ocean Modeling Testbed (COMT) user interface

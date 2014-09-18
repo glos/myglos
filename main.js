@@ -420,7 +420,7 @@ function makeCatalog(data) {
     var layers  = [];
     if (wms && getCaps) {
       d.url = getCaps.url;
-      _.each(_.filter(_.map(o.dimensions,function(o){return [o.name.split(' (').shift(),o.niceName.split(/(double|int)$/).shift()]}),function(o){return !_.isEmpty(o[0])}),function(o) {
+      _.each(_.filter(_.map(o.dimensions,function(o){return [o.name.split(' (').shift(),o.niceName.split(/(double|int|byte)$/).shift()]}),function(o){return !_.isEmpty(o[0])}),function(o) {
         if (!/^(latitude|longitude|time)$/i.test(o[0])) {
           if (!name2Color[o[0]]) {
             name2Color[o[0]] = buttonClasses[_.size(name2Color) % buttonClasses.length];

@@ -544,9 +544,18 @@ function addWMS(d) {
   map.zoomToExtent(d.bbox);
 
   lyr.events.register('loadstart',this,function(e) {
+// charlton
     $('#active-layers a[data-name="' + e.object.name + '"] img').show();
     $('#active-layers a[data-name="' + e.object.name + '"] span').hide();
-    $('#active-layers span[data-field="timestamp"][data-name="' + e.object.name + '"]').html(e.object.params.TIME + ' ');
+    var d = isoDateToDate(e.object.params.TIME);
+    var dt = Math.round(Math.abs(d.getTime() - mapDate.getTime()) / 3600000 / 24);
+    if (dt > 7) {
+      dt = ' <font color=red><b>over ' + dt + ' day(s) old';
+    }
+    else {
+      dt = '';
+    }
+    $('#active-layers span[data-field="timestamp"][data-name="' + e.object.name + '"]').html(d.format('UTC:yyyy-mm-dd"T"HH:MM') + dt + ' ');
   });
   lyr.events.register('loadend',this,function(e) {
     if (e.object.activeQuery == 0) {

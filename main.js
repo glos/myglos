@@ -415,11 +415,16 @@ function makeCatalog(data) {
       ,abstract  : o.abstract
       ,layers    : []
     };
-    var wms     = _.findWhere(o.services,{id : 'OGC-WMS'});
-    var getCaps = wms && _.findWhere(wms.operations,{name : 'GetCapabilities'});
     var layers  = [];
-    if (wms && getCaps) {
-      d.url = getCaps.url;
+
+    var svc = _.findWhere(o.services,{id : 'OGC-WMS'});
+    var op  = svc && _.findWhere(svc.operations,{name : 'GetCapabilities'});
+    if (!svc && !op) {
+      svc = _.findWhere(o.services,{id : 'SOS'});
+      op  = svc && _.findWhere(svc.operations,{name : 'GetObservation'});
+    }
+    if (svc && op) {
+      d.url = op.url;
       _.each(_.filter(_.map(o.dimensions,function(o){return [o.name.split(' (').shift(),o.niceName.split(/(double|int|byte)$/).shift()]}),function(o){return !_.isEmpty(o[0])}),function(o) {
         if (!/^(latitude|longitude|time)$/i.test(o[0])) {
           if (!name2Color[o[0]]) {
@@ -430,7 +435,8 @@ function makeCatalog(data) {
         }
       });
     }
-
+    layers = _.sortBy(layers,function(o){return $(o).data('name').toLowerCase()});
+ 
     var tSpan = '';
     var minT = o.temporal[0];
     var maxT = o.temporal[1];

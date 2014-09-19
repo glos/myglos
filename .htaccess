@@ -1,0 +1,4 @@
+Options +Includes
+XBitHack on
+SetEnv title 'MyGLOS'
+SetEnv singleTile false

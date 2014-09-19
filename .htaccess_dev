@@ -1,5 +1,0 @@
-Options +Includes
-XBitHack on
-SetEnv wms http://comt.sura.org/proxy_8081/wms/datasets/
-SetEnv title 'Coastal and Ocean Modeling Testbed - DEV'
-SetEnv singleTile true

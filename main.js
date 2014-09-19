@@ -580,7 +580,6 @@ function addWMS(d) {
 }
 
 function addObs(d) {
-// charlton
   var lyr = new OpenLayers.Layer.Vector(
      d.group + '-' + d.layers
   );
@@ -597,10 +596,11 @@ function addObs(d) {
   );
   var p = OpenLayers.Util.getParameters(d.url);
   p.observedProperty = d.layers;
-  p.eventtime = isoDateToDate(d.times[0]).format('UTC:yyyy-mm-dd"T"HH:MM:00') + '/' + isoDateToDate(d.times[1]).format('UTC:yyyy-mm-dd"T"HH:MM:00');
+  p.eventtime = isoDateToDate(d.times[0]).format('UTC:yyyy-mm-dd"T"HH:MM:00"Z"') + '/' + isoDateToDate(d.times[1]).format('UTC:yyyy-mm-dd"T"HH:MM:00"Z"');
   f.attributes = {
      getObs : d.url.split('?').shift() + '?' + OpenLayers.Util.getParameterString(p)
     ,name   : d.group
+    ,prop   : d.layers
   };
   lyr.addFeatures([f]); 
 
@@ -708,6 +708,7 @@ function query(xy) {
       $.ajax({
          url      : 'get.php?' + f.attributes.getObs
         ,title    : l.name
+        ,attrs    : f.attributes
         ,dataType : 'xml'
         ,success  : function(r) {
           var lyr = map.getLayersByName(this.title)[0];
@@ -718,10 +719,10 @@ function query(xy) {
           var $xml = $(r);
           var d = {
              data  : []
-            ,label : '<a target=_blank href="' + this.url + '">' + '&nbsp;' + this.title + ' (' + $xml.find('uom[code]').attr('code') + ')' + '</a>'
+            ,label : '<a target=_blank href="' + this.url + '">' + '&nbsp;' + this.title + ' (' + $xml.find('[name="' + this.attrs.prop + '"] uom[code]').attr('code') + ')' + '</a>'
           };
           var z = [];
-          _.each($xml.find('values').text().split(" "),function(o) {
+          _.each($xml.find('values').text().split(/ |\n/),function(o) {
             var a = o.split(',');
             if ((a.length == 2 || a.length == 3) && $.isNumeric(a[1])) {
               // only take the 1st value for each time
@@ -743,6 +744,8 @@ function query(xy) {
             d.label += '] (' + $xml.find('uom').attr('code') + ')' + '</a>';
           }
           d.color = lineColors[plotData.length % lineColors.length][0];
+          d.points = {show : d.data.length == 1 || this.url.indexOf('herokuapp') >= 0};
+          d.lines  = {show : d.data.length > 1 && this.url.indexOf('herokuapp') < 0};
           plotData.push(d);
           plot();
         }

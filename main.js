@@ -45,10 +45,10 @@ function resize() {
         timeSliderOffset = 150;
 	sliderOffset = 50;
   $('#mapView').height($(window).height() - mapOffset - sliderOffset - timeSliderOffset);
-  $('#results .table-wrapper').height($(window).height() - 216);
+  $('#results .table-wrapper').height($(window).height() - 139);
   $('#active-layers .table-wrapper').height($(window).height() - activeMapLayersTableOffset);
   $('#query-results_wrapper .dataTables_scrollBody').css('height',$(window).height() - activeMapLayersTableOffset - queryResultsFooterOffset);
-  $('.dataTables_scrollBody').height(($(window).height() - 250));
+  $('.dataTables_scrollBody').height(($(window).height() - 177));
   $('#query-results_wrapper .dataTables_scrollBody').css('overflow-x','hidden');
   fixCellWidth();
   map.updateSize();
@@ -67,17 +67,7 @@ function fixCellWidth() {
 window.onresize = resize;
 
 function categoryClick() {
-  syncFilters($('#categories.btn-group input:checked').attr('id'));
   syncQueryResults();
-}
-
-function filterValueSelect() {
-  var id = $(this).attr('id').replace('list','filter-btn');
-  $('#' + id).addClass('active');
-  // Give the button time to add its class (which is used for testing in the query).
-  setTimeout(function() {
-    syncQueryResults();
-  },100);
 }
 
 function prepareAddToMap() {
@@ -151,6 +141,17 @@ function hasScrollBar(div) {
 }
 
 $(document).ready(function() {
+  var i = 0;
+  $('#categories').empty();
+  _.each(['modis','salinity'],function(o) {
+    if (i == 0) {
+      cat = o;
+    }
+    $('#categories').append('<label class="btn btn-default ' + (i == 0 ? 'active' : '') + '"><input type="radio" name="categories" id="' + o + '" ' + (i == 0 ? 'checked' : '') + '>' + o + '</label>');
+    i++;
+  });
+  $('#categories.btn-group input').on('change', categoryClick);
+
   $('ul.nav li:first-child a').on('click', function(e){
     e.preventDefault();
     if ($(this).hasClass('active'))
@@ -322,8 +323,6 @@ $(document).ready(function() {
     }
   });
 
-  $('.selectpicker').selectpicker().on('change', filterValueSelect);
-
   $('#time-slider').slider({
     step: 6 * 3600000,
     formater: function(value) {
@@ -484,37 +483,8 @@ function makeCatalog(data) {
   return catalog;
 }
 
-function syncFilters(cat) {
-  $('#event-list').empty();
-  $('#event-list').append('<option checked value="' + 'ALL' + '">' + 'ALL' + '</option>');
-  _.each(_.sortBy(_.uniq(_.pluck(_.filter(catalog,function(o){return o.category == cat}),'storm')),function(o){return o.toUpperCase()}),function(o) {
-    $('#event-list').append('<option value="' + o + '">' + o + '</option>');
-  });
-   $('#event-list').selectpicker('refresh');
-
-  $('#model-list').empty();
-  $('#model-list').append('<option checked value="' + 'ALL' + '">' + 'ALL' + '</option>');
-  _.each(_.sortBy(_.uniq(_.pluck(_.filter(catalog,function(o){return o.category == cat}),'org_model')),function(o){return o.toUpperCase()}),function(o) {
-    $('#model-list').append('<option value="' + o + '">' + o + '</option>');
-  });
-  $('#model-list').selectpicker('refresh');
-}
-
 function syncQueryResults() {
-  $('#query-results').DataTable().clear();
-  $('#query-results').DataTable().row.add(['Loading...']).draw();
-  // give the table a chance to show the Loading... line
-  setTimeout(function() {
-    var i = 0;
-    var c = catalog.filter(function(o) {
-      var category = o.category == $('#categories.btn-group input:checked').attr('id');
-      var event = $('#event-list option:selected').val() == 'ALL' || $('#event-list option:selected').val() == o.storm;
-      var model = $('#model-list option:selected').val() == 'ALL' || $('#model-list option:selected').val() == o.org_model;
-      return category && event && model;
-    });
-    $('#query-results').DataTable().clear();
-    $('#query-results').DataTable().rows.add(_.pluck(_.sortBy(c,function(o){return o.name.toUpperCase()}),'tr')).draw();
-  },100);
+// charlton
 }
 
 function isoDateToDate(s) {

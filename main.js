@@ -200,6 +200,10 @@ $(document).ready(function() {
 
   map = new OpenLayers.Map('mapView',{
     layers  : [
+      new OpenLayers.Layer.Google('Google Terrain',{
+         type          : google.maps.MapTypeId.TERRAIN
+      })
+/*
       new OpenLayers.Layer.XYZ(
          'ESRI Ocean'
         ,'http://services.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/${z}/${y}/${x}.jpg'
@@ -209,6 +213,7 @@ $(document).ready(function() {
           ,wrapDateLine      : true
         }
       )
+*/
       ,lyrQuery
     ]
     ,center : new OpenLayers.LonLat(-83,28).transform(proj4326,proj3857)
@@ -242,7 +247,7 @@ $(document).ready(function() {
     ,ajax       : function (data,callback,settings) {
       var q = catalogQueryXML;
       q = q.replace('___LIMIT___',data.length).replace('___START___',data.start);
-      q = q.replace('___TEXTSEARCH___',1).replace('___ANYTEXT___','salinity');
+      q = q.replace('___TEXTSEARCH___',1).replace('___ANYTEXT___','modis');
       q = q.replace('___GEOSEARCH___',0);
       q = q.replace('___TEMPORALSEARCH___',0);
       q = q.replace(/___(WEST|EAST|NORTH|SOUTH)___/g,'0');

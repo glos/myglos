@@ -108,8 +108,12 @@ button.btn.dropdown-toggle.selectpicker.btn-default {
 	overflow-x	: hidden;
 }
 
-.table-wrapper .tooltip-inner {
+#active-layers tbody > .tooltip .tooltip-inner {
 	background-color: #fff;
+}
+
+#active-layers div table tbody tr td div .tooltip {
+	top: 93px !important;
 }
 
 #active-layers .table-wrapper a {
@@ -121,18 +125,49 @@ button.btn.dropdown-toggle.selectpicker.btn-default {
 	margin-top	: 3px;
 }
 
-#active-layers .table-wrapper a span.glyphicon-info-sign {
+#active-layers .table-wrapper a span.glyphicon-info-sign,
+#active-layers .table-wrapper a span.glyphicon-cog {
 	font-size	: 18px;
 	margin-top	: 4px;
 }
 
-#active-layers .table-wrapper a.popover-link {
+#active-layers .table-wrapper a.popover-link,
+#active-layers .table-wrapper a span.glyphicon-zoom-in {
 	margin-right: 10px;
 }
 
 #active-layers .table-wrapper a img {
 	display		: none;
 	margin-top	: 3px;
+}
+
+#active-layers .table-wrapper table tbody tr td div p {
+	white-space		: nowrap;
+	margin-bottom	: 0;
+	cursor			: default;
+}
+
+#active-layers .table-wrapper table tbody tr td div span.glyphicon-time {
+	float			: left;
+	font-size		: 18px;
+	margin-top		: 4px;
+	margin-right	: 5px;
+	cursor			: default;
+}
+
+#active-layers .table-wrapper table tbody tr td div span.glyphicon-time.red {
+	color: #f00;
+}
+
+#active-layers .table-wrapper table tbody tr td div input.form-control {
+	margin-top		: 4px;
+	height			: 21px;
+	width			: 88px;
+	font-size		: 11px;
+	float			: left;
+	text-align		: center;
+	padding-top 	: 0;
+	padding-bottom	: 0;
 }
 
 #results {
@@ -376,4 +411,24 @@ button.btn.dropdown-toggle.selectpicker.btn-default {
 .modal-content {
 	text-align	: center;
 	font-size	: 17px;
+}
+
+#layer-settings.modal h4{
+	font-size: 15px;
+}
+
+#layer-settings button.btn.dropdown-toggle.selectpicker {
+	border-top-left-radius		: 0px;
+	border-bottom-left-radius	: 0px;
+	height						: 30px;
+	border-left					: none;
+}
+
+#layer-settings span.label {
+	border-top-right-radius		: 0px;
+	border-bottom-right-radius	: 0px;
+}
+
+.popover.fade.right.in .arrow {
+	display: none;
 }

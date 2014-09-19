@@ -127,7 +127,8 @@ function addToMap(svc,c,lyrName) {
     syncTimeSlider(c.temporal);
 
     var title = obs ? '' : 'title="<img src=\'' + getLayerLegend(lyrName) + '\' alt=\'\'>"';
-    var rowHtml = '<tr data-toggle="tooltip" data-placement="right" data-html="true" ' + title + '><td title="' + lyrName + '"><div><span data-field="timestamp" data-name="' + lyrName + '"></span>' + lyrName + '<a href="#" title="Zoom To" data-name="' + lyrName + '"><span class="glyphicon glyphicon-zoom-in"></span><img src="./img/loading.gif"></a><a href="#" class="popover-link" data-toggle="popover" title="' + lyrName + '" data-html= "true" data-content="' + c.tSpan + '\n' + '<a target=\'_blank\' href=\'' + c.url + '\'>' + c.url + '</a>"><span class="glyphicon glyphicon-info-sign"></span></a></div></td>';
+    // var rowHtml = '<tr data-toggle="tooltip" data-placement="right" data-html="true" ' + title + '><td title="' + lyrName + '"><div><span data-field="timestamp" data-name="' + lyrName + '"></span>' + lyrName + '<a href="#" title="Zoom To" data-name="' + lyrName + '"><span class="glyphicon glyphicon-zoom-in"></span><img src="./img/loading.gif"></a><a href="#" class="popover-link" data-toggle="popover" title="' + lyrName + '" data-html= "true" data-content="' + c.tSpan + '\n' + '<a target=\'_blank\' href=\'' + c.url + '\'>' + c.url + '</a>"><span class="glyphicon glyphicon-info-sign"></span></a></div></td>';
+    var rowHtml = '<tr data-toggle="tooltip" data-placement="right" data-html="true" ' + title + '><td><div><p title="' + lyrName + '">' + lyrName + '</p><span class="glyphicon glyphicon-time" name="' + lyrName + '"></span><input type="text" name="' + lyrName + '" value="" disabled class="form-control"><a href="#" data-name="' + lyrName + '" data-toggle="modal" data-target="#layer-settings"><span class="glyphicon glyphicon-cog"></span><a href="#" title="Zoom To" data-name="' + lyrName + '"><span class="glyphicon glyphicon-zoom-in"></span><img src="./img/loading.gif"></a><a href="#" class="popover-link" data-toggle="popover" title="' + lyrName + '" data-html= "true"  data-name="' + lyrName + '" data-content="' + c.tSpan + '\n' + '<a target=\'_blank\' href=\'' + c.url + '\'>' + c.url + '</a>"><span class="glyphicon glyphicon-info-sign"></span></a></div></td>';
     rowHtml += '<td class="checkbox-cell"><input type="checkbox" checked value="' + lyrName + '" /></td>';
     $('#active-layers table tbody').append(rowHtml);
     $('#active-layers input:checkbox').off('click');
@@ -364,14 +365,22 @@ $(document).ready(function() {
 
   resize();
   if (!/DEV/.test(document.title)) {
-    // $('.modal').modal();
+    $('#beta-notice').modal();
   }
+  $('#layer-settings').on('show.bs.modal', function (e) {
+    $('#layer-settings .modal-dialog .modal-header h4').text(e.relatedTarget.attributes["data-name"].value);
+    $('#layer-settings .modal-dialog .modal-body').html('<span class="label label-default">Color ramp</span><select class="selectpicker"></select></div>');
+    $('.modal-body .selectpicker').selectpicker();
+    if (navigator.userAgent.match(/Firefox/i)) {
+      $('#layer-settings .modal-dialog .modal-body span.label').css({paddingTop:'9px',paddingBottom:'7px'});
+    }
+  });
 });
 
 function syncTimeSlider(t) {
   var times = t ? t : [];
   $.each($('#active-layers table tbody tr td:first-child'),function() {
-    var lyr = map.getLayersByName($(this).attr('title'))[0];
+    var lyr = map.getLayersByName($(this).text())[0];
     if (lyr.visibility) {
       times = times.concat(lyr.times);
     }
@@ -463,6 +472,7 @@ function makeCatalog(data) {
       : 'https://maps.googleapis.com/maps/api/staticmap?key=AIzaSyBuB8P_e6vQcucjnE64Kh2Fwu6WzhMXZzI&path=weight:1|fillcolor:0x0000AA11|color:0x0000FFBB|' + d.spatial[1] + ',' + d.spatial[0] + '|' + d.spatial[1] + ',' + d.spatial[2] + '|' + d.spatial[3] + ',' + d.spatial[2] + '|' + d.spatial[3] + ',' + d.spatial[0] + '|' + d.spatial[1] + ',' + d.spatial[0] + '&size=60x60&sensor=false';
     var thumb = '<img width=60 height=60 src="' + src + '" title="Data boundaries" alt="Data boundaries">';
     var abstract = !_.isEmpty(d.abstract) ? '<p>' + d.abstract + '</p>' : '';
+    // d.tr = ['<div class="thumbnail">' + thumb + '</div><div class="title">' + d.name + '</div><br />' + abstract + '<div class="time-range"><div class="time-range-label"><span class="glyphicon glyphicon-time"></span>Time Range</div><input type="text" name="timeRange" value="' + d.tSpan + '" disabled class="form-control"></div><div class="download-data"><a target=_blank href="' + d.url + '" title="Download Data"><span class="glyphicon glyphicon-download"></span>Download Data</a></div>' + layers.join(' ')];
     d.tr = ['<div class="thumbnail">' + thumb + '</div><div class="title">' + d.name + '</div><br />' + abstract + '<div class="time-range"><div class="time-range-label"><span class="glyphicon glyphicon-time"></span>Time Range</div><input type="text" name="timeRange" value="' + d.tSpan + '" disabled class="form-control"></div><div class="download-data"><a target=_blank href="' + d.url + '" title="Download Data"><span class="glyphicon glyphicon-download"></span>Download Data</a></div>' + layers.join(' ')];
     catalog.push(d);
   });
@@ -553,18 +563,20 @@ function addWMS(d) {
   map.zoomToExtent(d.bbox);
 
   lyr.events.register('loadstart',this,function(e) {
-// charlton
     $('#active-layers a[data-name="' + e.object.name + '"] img').show();
     $('#active-layers a[data-name="' + e.object.name + '"] span').hide();
     var d = isoDateToDate(e.object.params.TIME);
     var dt = Math.round(Math.abs(d.getTime() - mapDate.getTime()) / 3600000 / 24);
+    var timeEl = $('#active-layers span[name="' + e.object.name + '"].glyphicon-time');
     if (dt > 7) {
-      dt = ' <font color=red><b>over ' + dt + ' day(s) old';
+      timeEl.addClass('red');
+      timeEl.tooltip().attr('data-original-title','Over ' + dt + ' day(s) old').tooltip('fixTitle');
     }
     else {
-      dt = '';
+      timeEl.removeClass('red');
+      timeEl.tooltip().attr('data-original-title','').tooltip('fixTitle');
     }
-    $('#active-layers span[data-field="timestamp"][data-name="' + e.object.name + '"]').html(d.format('UTC:yyyy-mm-dd"T"HH:MM') + dt + ' ');
+    $('#active-layers input:text[name="' + e.object.name + '"]').val(d.format('UTC:yyyy-mm-dd'));
   });
   lyr.events.register('loadend',this,function(e) {
     if (e.object.activeQuery == 0) {
@@ -642,7 +654,7 @@ function zoomToLayer(name) {
 function setDate(dt) {
   mapDate = dt;
   $.each($('#active-layers table tbody tr td:first-child'),function() {
-    var lyr = map.getLayersByName($(this).attr('title'))[0];
+    var lyr = map.getLayersByName($(this).text())[0];
     if (lyr.DEFAULT_PARAMS) {
       lyr.mergeNewParams({TIME : getNearestDate(mapDate,lyr.times).format('UTC:yyyy-mm-dd"T"HH:MM:00')});
     }
@@ -666,7 +678,7 @@ function getNearestDate(dt,times) {
 function clearMap() {
   clearQuery();
   $.each($('#active-layers table tbody tr td:first-child'),function() {
-    map.removeLayer(map.getLayersByName($(this).attr('title'))[0]);
+    map.removeLayer(map.getLayersByName($(this).text())[0]);
   });
   $('#active-layers table tbody tr').remove();
   $('#active-layers table thead th:last-child').css('width', '30px');

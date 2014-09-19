@@ -332,7 +332,6 @@ function syncTimeSlider(t) {
     if ($('#time-slider-wrapper').is(':visible')) {
       $('#time-slider-wrapper').toggle();
     }
-    mapDate = false;
   }
 }
 

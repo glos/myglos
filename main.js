@@ -201,7 +201,7 @@ $(document).ready(function() {
   map = new OpenLayers.Map('mapView',{
     layers  : [
       new OpenLayers.Layer.Google('Google Terrain',{
-         type          : google.maps.MapTypeId.TERRAIN
+         type : google.maps.MapTypeId.TERRAIN
       })
 /*
       new OpenLayers.Layer.XYZ(

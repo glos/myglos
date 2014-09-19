@@ -83,24 +83,24 @@ function filterValueSelect() {
 function prepareAddToMap() {
   var idx  = $(this).data('idx');
   var name = $(this).data('name');
+  var svc  = $(this).data('svc-type');
   var c    = _.findWhere(catalog,{idx : idx});
-  if (!c.times) {
+  if (!c.times && /wms/i.test(svc)) {
     wmsGetCaps(c.url,idx,name);
   }
   else {
-    addToMap(c,name);
+    addToMap(svc,c,name);
   }
 }
 
-function addToMap(c,lyrName) {
-  var obs = false;
+function addToMap(svc,c,lyrName) {
+  var obs = /sos/i.test(svc);
   var lc = 0;
   if (_.isEmpty(map.getLayersByName(c.name + '-' + lyrName))) {
     if (!mapDate) {
-      mapDate = isoDateToDate(c.times[c.times.length - 1]);
+      mapDate = c.times ? isoDateToDate(c.times[c.times.length - 1]) : isoDateToDate(c.temporal[0]);
     }
-    if (c.layers[lyrName] == 'OBSERVATION') {
-      obs = true;
+    if (obs) {
       lyrName = addObs({
          group    : c.name
         ,url      : c.url
@@ -241,7 +241,7 @@ $(document).ready(function() {
     ,ajax       : function (data,callback,settings) {
       var q = catalogQueryXML;
       q = q.replace('___LIMIT___',data.length).replace('___START___',data.start);
-      q = q.replace('___TEXTSEARCH___',1).replace('___ANYTEXT___','temperature');
+      q = q.replace('___TEXTSEARCH___',1).replace('___ANYTEXT___','salinity');
       q = q.replace('___GEOSEARCH___',0);
       q = q.replace('___TEMPORALSEARCH___',0);
       q = q.replace(/___(WEST|EAST|NORTH|SOUTH)___/g,'0');
@@ -431,7 +431,7 @@ function makeCatalog(data) {
             name2Color[o[0]] = buttonClasses[_.size(name2Color) % buttonClasses.length];
           }
           d.layers[o[1]] = '';
-          layers.push('<a href="#" data-idx="' + d.idx + '" data-name="' + o[1] + '" class="btn btn-' + name2Color[o[0]] + '">' + o[0] + '</a>');
+          layers.push('<a href="#" data-svc-type="' + svc.id + '" data-idx="' + d.idx + '" data-name="' + o[1] + '" class="btn btn-' + name2Color[o[0]] + '">' + o[0] + '</a>');
         }
       });
     }
@@ -580,6 +580,7 @@ function addWMS(d) {
 }
 
 function addObs(d) {
+// charlton
   var lyr = new OpenLayers.Layer.Vector(
      d.group + '-' + d.layers
   );
@@ -589,34 +590,19 @@ function addObs(d) {
   lyr.activeQuery = 0;
   map.zoomToExtent(d.bbox);
 
-  $.ajax({
-     url      : 'obs/' + d.group + '.json' + '?' + new Date().getTime() + Math.random()
-    ,dataType : 'json'
-    ,lyr      : lyr.name
-    ,success  : function(r) {
-      var features = [];
-      _.each(r.stations,function(o) {
-        var v = _.values(o)[0];
-        var k = _.keys(o)[0];
-        var f = new OpenLayers.Feature.Vector(
-          new OpenLayers.Geometry.Point(v.spatial[0],v.spatial[1]).transform(proj4326,proj3857)
-        );
-        features.push(f);
-        f.attributes = {
-          getObs : r.getObs.url
-            + '&offering=' + r.getObs.offering + k
-            + '&procedure=' + r.getObs.procedure + k
-            + '&observedProperty=' + d.layers
-            + '&eventTime=' + isoDateToDate(d.times[0]).format('UTC:yyyy-mm-dd"T"HH:MM:00') + '/' + isoDateToDate(d.times[1]).format('UTC:yyyy-mm-dd"T"HH:MM:00')
-          ,name : k
-        };
-      });
-      var lyr = map.getLayersByName(this.lyr)[0];
-      if (lyr) {
-        lyr.addFeatures(features); 
-      }
-    }
-  });
+  var center = lyr.bbox.getCenterLonLat();
+
+  var f = new OpenLayers.Feature.Vector(
+    new OpenLayers.Geometry.Point(center.lon,center.lat)
+  );
+  var p = OpenLayers.Util.getParameters(d.url);
+  p.observedProperty = d.layers;
+  p.eventtime = isoDateToDate(d.times[0]).format('UTC:yyyy-mm-dd"T"HH:MM:00') + '/' + isoDateToDate(d.times[1]).format('UTC:yyyy-mm-dd"T"HH:MM:00');
+  f.attributes = {
+     getObs : d.url.split('?').shift() + '?' + OpenLayers.Util.getParameterString(p)
+    ,name   : d.group
+  };
+  lyr.addFeatures([f]); 
 
   lyr.events.register('loadstart',this,function(e) {
     $('#active-layers a[data-name="' + e.object.name + '"] img').show();
@@ -720,7 +706,7 @@ function query(xy) {
       l.events.triggerEvent('loadstart');
       l.activeQuery++;
       $.ajax({
-         url      : f.attributes.getObs
+         url      : 'get.php?' + f.attributes.getObs
         ,title    : l.name
         ,dataType : 'xml'
         ,success  : function(r) {
@@ -964,7 +950,7 @@ function wmsGetCaps(url,idx,name) {
       // The times should be uniform for all datasets, so pick off the 1st.
       var c = _.findWhere(catalog,{idx : this.idx});
       c.times = layers[0].times;
-      addToMap(c,this.name);
+      addToMap('wms',c,this.name);
     }
   });
 }

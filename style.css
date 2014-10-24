@@ -447,3 +447,11 @@ button.btn.dropdown-toggle.selectpicker.btn-default {
 .popup th, td{
   padding: 5px;
 }
+
+.popupDate {
+  width: 90px;
+}
+
+.popupValue {
+  width: 90px;
+}

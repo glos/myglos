@@ -237,6 +237,9 @@ $(document).ready(function() {
     // add any features to the control layers (don't add the control wrappers)
     if (e.layer.features && !e.layer.layers) {
       addToAssetsControl([e.layer]);
+      assetsControlSelect.unselectAll();
+      assetsControlSelect.highlight(e.layer.features[0]);
+      popup(e.layer.features[0]);
     }
   });
 
@@ -672,9 +675,9 @@ function addObs(d) {
     var p = OpenLayers.Util.getParameters(d.url);
     p.observedProperty = d.layers[i];
     p.eventtime = isoDateToDate(d.times[0]).format('UTC:yyyy-mm-dd"T"HH:MM:00"Z"') + '/' + isoDateToDate(d.times[1]).format('UTC:yyyy-mm-dd"T"HH:MM:00"Z"');
-    var prop = {name : d.layers[i],all : d.url.split('?').shift() + '?' + OpenLayers.Util.getParameterString(p)};
+    var prop = {name : d.layers[i],allUrl : d.url.split('?').shift() + '?' + OpenLayers.Util.getParameterString(p)};
     p.eventtime = 'latest';
-    prop['latest'] = d.url.split('?').shift() + '?' + OpenLayers.Util.getParameterString(p);
+    prop['latestUrl'] = d.url.split('?').shift() + '?' + OpenLayers.Util.getParameterString(p);
     props.push(prop);
   }
   f.attributes = {
@@ -761,11 +764,12 @@ function clearQuery() {
   lyrQuery.removeAllFeatures();
 }
 
-function getObs(id,prop,url) {
+function getObs(f,prop,url) {
   $.ajax({
      url      : 'get.php?' + url
     ,prop     : prop
-    ,id       : id
+    ,id       : f.id
+    ,f        : f
     ,dataType : 'xml'
     ,success  : function(r) {
       var $xml = $(r);
@@ -788,8 +792,11 @@ function getObs(id,prop,url) {
         $("[id='" + this.id + "." + this.prop + ".v']").html(String(d.data[0][1] + ' ' + d.uom).replace(/ /g,'&nbsp;'));
       }
       else {
-        $("[id='" + this.id + "." + this.prop + ".t']").html('no data');
+        $("[id='" + this.id + "." + this.prop + ".t']").html('<font color=lightgray>no&nbsp;data</font>');
       }
+      _.findWhere(this.f.attributes.props,{name : this.prop}).t = $("[id='" + this.id + "." + this.prop + ".t']").html();
+      _.findWhere(this.f.attributes.props,{name : this.prop}).v = $("[id='" + this.id + "." + this.prop + ".v']").html();
+
       map.popup && map.popup.updateSize();
     }
     ,error    : function(r) {
@@ -1127,16 +1134,7 @@ function addToAssetsControl(l) {
     }
     l[j].events.on({
       featureselected : function(e) {
-        if (!e.feature.attributes.table) {
-          var tr = ['<thead><tr><th colspan=3>' + e.feature.attributes.name + '</th></tr></thead>'];
-          for (var i = 0; i < Math.min(20,e.feature.attributes.props.length); i++) {
-            tr.push('<tr><td>' + e.feature.attributes.props[i].name + '</td><td id="' + e.feature.id + '.' + e.feature.attributes.props[i].name + '.t' + '"></td><td id="' + e.feature.id + '.' + e.feature.attributes.props[i].name + '.v' + '"></td></tr>');
-            getObs(e.feature.id,e.feature.attributes.props[i].name,e.feature.attributes.props[i].latest);
-          }
-          var table = '<table class="popup">' + tr.join('') + '</table>';
-          e.feature.attributes.table = table;
-        }
-        popup(e.feature.geometry.getCentroid(),{html : e.feature.attributes.table,closable : true});
+        popup(e.feature);
       }
       ,featureunselected : function(e) {
         if (map.popup) {
@@ -1149,14 +1147,24 @@ function addToAssetsControl(l) {
   }
 }
 
-function popup(center,data) {
-  map.popup = new OpenLayers.Popup.FramedCloud(
+function popup(f) {
+  var tr = ['<thead><tr><th colspan=3>' + f.attributes.name + '</th></tr></thead>'];
+  for (var i = 0; i < Math.min(50,f.attributes.props.length); i++) {
+    var t = f.attributes.props[i].t ? f.attributes.props[i].t : '<img width=20 height=20 src="img/loading.gif">';
+    var v = f.attributes.props[i].v ? f.attributes.props[i].v : '&nbsp;';
+    tr.push('<tr><td>' + f.attributes.props[i].name + '</td><td class="popupDate" id="' + f.id + '.' + f.attributes.props[i].name + '.t' + '">' + t + '</td><td class="popupValue" id="' + f.id + '.' + f.attributes.props[i].name + '.v' + '">' + v + '</td></tr>');
+    if (t == '<img width=20 height=20 src="img/loading.gif">' && v == '&nbsp;') {
+      getObs(f,f.attributes.props[i].name,f.attributes.props[i].latestUrl);
+    }
+  }
+  var center = f.geometry.getCentroid();
+  map.popup  = new OpenLayers.Popup.FramedCloud(
      'popup'
     ,new OpenLayers.LonLat(center.x,center.y)
     ,null
-    ,data.html
+    ,'<table class="popup">' + tr.join('') + '</table>'
     ,null
-    ,data.closable
+    ,true
     ,function(e) {
       map.removePopup(map.popup);
       map.popup.destroy();
@@ -1165,5 +1173,7 @@ function popup(center,data) {
       OpenLayers.Event.stop(e);
     }
   );
+  map.popup.minSize = new OpenLayers.Size(400,400);
+  map.popup.maxSize = new OpenLayers.Size(400,400);
   map.addPopup(map.popup,true);
 }

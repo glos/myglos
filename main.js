@@ -817,91 +817,80 @@ function getObs(f,prop,url) {
   });
 }
 
+function graphObs(prop,url,title) {
+  var lyr = map.getLayersByName(title)[0];
+  if (lyr) {
+    lyr.events.triggerEvent('loadstart');
+    lyr.activeQuery++;
+  }
+  plotData = [];
+  $.ajax({
+     url      : 'get.php?' + url
+    ,prop     : prop
+    ,title    : title
+    ,dataType : 'xml'
+    ,success  : function(r) {
+      var lyr = map.getLayersByName(this.title)[0];
+      if (lyr) {
+        lyr.activeQuery--;
+        lyr.events.triggerEvent('loadend');
+      }
+      var $xml = $(r);
+      var d = {
+         data  : []
+        ,label : '<a target=_blank href="' + this.url + '">' + '&nbsp;' + this.title + '-' + this.prop + ' (' + $xml.find('[name="' + this.prop + '"] uom[code]').attr('code') + ')' + '</a>'
+      };
+      var z = [];
+      _.each($xml.find('values').text().split(/ |\n/),function(o) {
+        var a = o.split(',');
+        if ((a.length == 2 || a.length == 3) && $.isNumeric(a[1])) {
+          // only take the 1st value for each time
+          var t = isoDateToDate(a[0]).getTime();
+          if (!_.find(d.data,function(o){return o[0] == t})) {
+            d.data.push([t,a[1]]);
+            if (a.length == 3) {
+              z.push(a[2]);
+            }
+          }
+        }
+      });
+      if (!_.isEmpty(z)) {
+        z = _.uniq(z.sort(function(a,b){return a-b}),true);
+        d.label = '<a target=_blank href="' + this.url + '">' + '&nbsp;' + this.title + ' [' + $($xml.find('field')[2]).attr('name') + ' ' + z[0];
+        if (z.length > 1) {
+          d.label += ' - ' + z[z.length - 1];
+        }
+        d.label += '] (' + $xml.find('uom').attr('code') + ')' + '</a>';
+      }
+      d.color = lineColors[plotData.length % lineColors.length][0];
+      d.points = {show : d.data.length == 1 || this.url.indexOf('herokuapp') >= 0};
+      d.lines  = {show : d.data.length > 1 && this.url.indexOf('herokuapp') < 0};
+      plotData.push(d);
+      plot();
+    }
+    ,error    : function(r) {
+      var lyr = map.getLayersByName(this.title)[0];
+      if (lyr) {
+        lyr.activeQuery--;
+        lyr.events.triggerEvent('loadend');
+      }
+      var d = {
+         data  : []
+        ,label : '<a target=_blank href="' + this.url + '">' + '&nbsp;' + this.title + ' <font color=red><b>ERROR</b></font>'
+      };
+      d.color = lineColors[plotData.length % lineColors.length][0];
+      plotData.push(d);
+      plot();
+    }
+  });
+}
+
 function query(xy) {
   plotData = [];
   var lonLat = map.getLonLatFromPixel(xy);
   var pt = new OpenLayers.Geometry.Point(lonLat.lon,lonLat.lat);
   var f  = new OpenLayers.Feature.Vector(pt);
   lyrQuery.addFeatures([f]);
-
-  _.each(_.filter(map.layers,function(o){return o.features && o.features.length > 0 && o.features[0].attributes && o.features[0].attributes.getObs && o.visibility}),function(l) {
-    // find the closest site w/i a tolerance
-    var f;
-    var minD;
-    _.each(l.features,function(o) {
-      var d = pt.distanceTo(o.geometry.getCentroid());
-      if (d <= 10000) {
-        if (_.isUndefined(minD) || d < minD) {
-          f = o.clone();
-        }
-        minD = d;
-      }
-    });
-    if (f) {
-      l.events.triggerEvent('loadstart');
-      l.activeQuery++;
-      $.ajax({
-         url      : 'get.php?' + f.attributes.getObs
-        ,title    : l.name
-        ,attrs    : f.attributes
-        ,dataType : 'xml'
-        ,success  : function(r) {
-          var lyr = map.getLayersByName(this.title)[0];
-          if (lyr) {
-            lyr.activeQuery--;
-            lyr.events.triggerEvent('loadend');
-          }
-          var $xml = $(r);
-          var d = {
-             data  : []
-            ,label : '<a target=_blank href="' + this.url + '">' + '&nbsp;' + this.title + ' (' + $xml.find('[name="' + this.attrs.prop + '"] uom[code]').attr('code') + ')' + '</a>'
-          };
-          var z = [];
-          _.each($xml.find('values').text().split(/ |\n/),function(o) {
-            var a = o.split(',');
-            if ((a.length == 2 || a.length == 3) && $.isNumeric(a[1])) {
-              // only take the 1st value for each time
-              var t = isoDateToDate(a[0]).getTime();
-              if (!_.find(d.data,function(o){return o[0] == t})) {
-                d.data.push([t,a[1]]);
-                if (a.length == 3) {
-                  z.push(a[2]);
-                }
-              }
-            }
-          });
-          if (!_.isEmpty(z)) {
-            z = _.uniq(z.sort(function(a,b){return a-b}),true);
-            d.label = '<a target=_blank href="' + this.url + '">' + '&nbsp;' + this.title + ' [' + $($xml.find('field')[2]).attr('name') + ' ' + z[0];
-            if (z.length > 1) {
-              d.label += ' - ' + z[z.length - 1];
-            }
-            d.label += '] (' + $xml.find('uom').attr('code') + ')' + '</a>';
-          }
-          d.color = lineColors[plotData.length % lineColors.length][0];
-          d.points = {show : d.data.length == 1 || this.url.indexOf('herokuapp') >= 0};
-          d.lines  = {show : d.data.length > 1 && this.url.indexOf('herokuapp') < 0};
-          plotData.push(d);
-          plot();
-        }
-        ,error    : function(r) {
-          var lyr = map.getLayersByName(this.title)[0];
-          if (lyr) {
-            lyr.activeQuery--;
-            lyr.events.triggerEvent('loadend');
-          }
-          var d = {
-             data  : []
-            ,label : '<a target=_blank href="' + this.url + '">' + '&nbsp;' + this.title + ' <font color=red><b>ERROR</b></font>'
-          };
-          d.color = lineColors[plotData.length % lineColors.length][0];
-          plotData.push(d);
-          plot();
-        }
-      });
-    }
-  });
-
   _.each(_.filter(map.layers,function(o){return o.DEFAULT_PARAMS && o.visibility}),function(l) {
     l.events.triggerEvent('loadstart');
     var u = l.getFullRequestString({
@@ -1163,7 +1152,7 @@ function popup(f) {
   for (var i = 0; i < Math.min(50,f.attributes.props.length); i++) {
     var t = f.attributes.props[i].t ? f.attributes.props[i].t : '&nbsp;';
     var v = f.attributes.props[i].v ? f.attributes.props[i].v : '<img width=20 height=20 src="img/loading.gif">';
-    tr.push('<tr><td>' + f.attributes.props[i].name + '</td><td class="popupDate" id="' + f.id + '.' + f.attributes.props[i].name + '.t' + '">' + t + '</td><td class="popupValue" id="' + f.id + '.' + f.attributes.props[i].name + '.v' + '">' + v + '</td></tr>');
+    tr.push('<tr><td><a href="#" data-url="' + f.attributes.props[i].allUrl + '" data-prop="' + f.attributes.props[i].name + '" data-name="' + f.layer.name + '">' + f.attributes.props[i].name + '</a></td><td class="popupDate" id="' + f.id + '.' + f.attributes.props[i].name + '.t' + '">' + t + '</td><td class="popupValue" id="' + f.id + '.' + f.attributes.props[i].name + '.v' + '">' + v + '</td></tr>');
     if (t == '&nbsp;' && v == '<img width=20 height=20 src="img/loading.gif">') {
       getObs(f,f.attributes.props[i].name,f.attributes.props[i].latestUrl);
     }
@@ -1173,7 +1162,7 @@ function popup(f) {
      'popup'
     ,new OpenLayers.LonLat(center.x,center.y)
     ,null
-    ,'<table class="popup">' + tr.join('') + '</table>'
+    ,'<table id="popup">' + tr.join('') + '</table>'
     ,null
     ,true
     ,function(e) {
@@ -1188,4 +1177,8 @@ function popup(f) {
   map.popup.maxSize = new OpenLayers.Size(400,400);
   map.popup.panMapIfOutOfView = false;
   map.addPopup(map.popup,true);
+
+  $('#popup a').on('click',function() {
+    graphObs($(this).data('prop'),$(this).data('url'),$(this).data('name'));
+  });
 }

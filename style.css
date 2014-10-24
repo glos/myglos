@@ -444,7 +444,7 @@ button.btn.dropdown-toggle.selectpicker.btn-default {
 	color			: #777;
 }
 
-.popup th, td{
+#popup th, td{
   padding: 5px;
 }
 

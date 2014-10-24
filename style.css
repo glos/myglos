@@ -443,3 +443,7 @@ button.btn.dropdown-toggle.selectpicker.btn-default {
 	background-image:         linear-gradient(left, #fff, #85c1de);
 	color			: #777;
 }
+
+.popup th, td{
+  padding: 5px;
+}

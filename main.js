@@ -8,6 +8,7 @@ var plotData = [];
 var prevPt;
 var proj3857 = new OpenLayers.Projection("EPSG:3857");
 var proj4326 = new OpenLayers.Projection("EPSG:4326");
+var assetsControlSelect;
 
 var buttonClasses = [
    'primary'
@@ -94,7 +95,7 @@ function addToMap(svc,c,lyrName) {
       lyrName = addObs({
          group    : c.name
         ,url      : c.url
-        ,layers   : lyrName
+        ,layers   : _.sortBy(_.keys(c.layers),function(o){return o.toLowerCase()})
         ,times    : c.temporal
         ,bbox     : new OpenLayers.Bounds(c.spatial).transform(proj4326,proj3857)
       });
@@ -232,6 +233,18 @@ $(document).ready(function() {
     _.each(_.filter(map.layers,function(o){return o.renderer && o.name != 'Query points'}),function(o) {
       map.setLayerIndex(o,map.layers.length - 2);
     });
+
+    // add any features to the control layers (don't add the control wrappers)
+    if (e.layer.features && !e.layer.layers) {
+      addToAssetsControl([e.layer]);
+    }
+  });
+
+  map.events.register('removelayer',this,function(e) {
+    // sync w/ control layers
+    if (e.layer.features && !e.layer.layers) {
+      removeFromAssetsControl([e.layer.name]);
+    }
   });
 
   $('#query-results').DataTable({
@@ -582,9 +595,67 @@ function addWMS(d) {
 }
 
 function addObs(d) {
-  var lyr = new OpenLayers.Layer.Vector(
-     d.group + '-' + d.layers
-  );
+  var lyr = new OpenLayers.Layer.Vector(d.group,{
+    styleMap   : new OpenLayers.StyleMap({
+      'default' : new OpenLayers.Style(
+        OpenLayers.Util.applyDefaults(
+          {
+             fillColor       : '#e8bb99'
+            ,fillOpacity     : 0.7
+            ,strokeWidth     : 1
+            ,strokeColor     : '#b56529'
+            ,strokeOpacity   : 1
+            ,pointRadius     : 6
+            ,label           : '${name}'
+            ,labelOutlineColor : 'white'
+            ,labelOutlineWidth : 1
+            ,labelAlign        : 'cm'
+            ,labelYOffset      : 18
+            ,fontFamily        : 'tahoma,helvetica,sans-serif'
+            ,fontSize          : 14
+          }
+        )
+      )
+      ,'temporary' : new OpenLayers.Style(
+        OpenLayers.Util.applyDefaults(
+          {
+             fillColor       : '#99e9ae'
+            ,fillOpacity     : 0.7
+            ,strokeWidth     : 1
+            ,strokeColor     : '#1d8538'
+            ,strokeOpacity   : 1
+            ,pointRadius     : 6
+            ,label           : '${name}'
+            ,labelOutlineColor : 'white'
+            ,labelOutlineWidth : 1
+            ,labelAlign        : 'cm'
+            ,labelYOffset      : 18
+            ,fontFamily        : 'tahoma,helvetica,sans-serif'
+            ,fontSize          : 14
+          }
+        )
+      )
+      ,'select' : new OpenLayers.Style(
+        OpenLayers.Util.applyDefaults(
+          {
+             fillColor       : '#99BBE8'
+            ,fillOpacity     : 0.7
+            ,strokeWidth     : 1
+            ,strokeColor     : '#1558BB'
+            ,strokeOpacity   : 1
+            ,pointRadius     : 6
+            ,label           : '${name}'
+            ,labelOutlineColor : 'white'
+            ,labelOutlineWidth : 1
+            ,labelAlign        : 'cm'
+            ,labelYOffset      : 18
+            ,fontFamily        : 'tahoma,helvetica,sans-serif'
+            ,fontSize          : 14
+          }
+        )
+      )
+    })
+  });
   lyr.group = d.group;
   lyr.times = d.times;
   lyr.bbox  = d.bbox;
@@ -596,13 +667,19 @@ function addObs(d) {
   var f = new OpenLayers.Feature.Vector(
     new OpenLayers.Geometry.Point(center.lon,center.lat)
   );
-  var p = OpenLayers.Util.getParameters(d.url);
-  p.observedProperty = d.layers;
-  p.eventtime = isoDateToDate(d.times[0]).format('UTC:yyyy-mm-dd"T"HH:MM:00"Z"') + '/' + isoDateToDate(d.times[1]).format('UTC:yyyy-mm-dd"T"HH:MM:00"Z"');
+  var props = [];
+  for (var i = 0; i < d.layers.length; i++) {
+    var p = OpenLayers.Util.getParameters(d.url);
+    p.observedProperty = d.layers[i];
+    p.eventtime = isoDateToDate(d.times[0]).format('UTC:yyyy-mm-dd"T"HH:MM:00"Z"') + '/' + isoDateToDate(d.times[1]).format('UTC:yyyy-mm-dd"T"HH:MM:00"Z"');
+    var prop = {name : d.layers[i],all : d.url.split('?').shift() + '?' + OpenLayers.Util.getParameterString(p)};
+    p.eventtime = 'latest';
+    prop['latest'] = d.url.split('?').shift() + '?' + OpenLayers.Util.getParameterString(p);
+    props.push(prop);
+  }
   f.attributes = {
-     getObs : d.url.split('?').shift() + '?' + OpenLayers.Util.getParameterString(p)
-    ,name   : d.group
-    ,prop   : d.layers
+     name  : d.group
+    ,props : props
   };
   lyr.addFeatures([f]); 
 
@@ -682,6 +759,44 @@ function clearQuery() {
   plotData = [];
   plot();
   lyrQuery.removeAllFeatures();
+}
+
+function getObs(id,prop,url) {
+  $.ajax({
+     url      : 'get.php?' + url
+    ,prop     : prop
+    ,id       : id
+    ,dataType : 'xml'
+    ,success  : function(r) {
+      var $xml = $(r);
+      var d = {
+         uom  : $xml.find('[name="' + this.prop + '"] uom[code]').attr('code')
+        ,data : []
+      };
+      _.each($xml.find('values').text().split(/ |\n/),function(o) {
+        var a = o.split(',');
+        if ((a.length == 2 || a.length == 3) && $.isNumeric(a[1])) {
+          // only take the 1st value for each time
+          var t = isoDateToDate(a[0]).getTime();
+          if (!_.find(d.data,function(o){return o[0] == t})) {
+            d.data.push([t,a[1]]);
+          }
+        }
+      });
+      if (d.data.length > 0) {
+        $("[id='" + this.id + "." + this.prop + ".t']").html(new Date(d.data[0][0]).format('UTC:mmm d, yyyy').replace(/ /g,'&nbsp;'));
+        $("[id='" + this.id + "." + this.prop + ".v']").html(String(d.data[0][1] + ' ' + d.uom).replace(/ /g,'&nbsp;'));
+      }
+      else {
+        $("[id='" + this.id + "." + this.prop + ".t']").html('no data');
+      }
+      map.popup && map.popup.updateSize();
+    }
+    ,error    : function(r) {
+      $("[id='" + this.id + "." + this.prop + ".t']").html('query error');
+      map.popup && map.popup.updateSize();
+    }
+  });
 }
 
 function query(xy) {
@@ -972,4 +1087,83 @@ function showToolTip(x,y,contents) {
     ,opacity            : 0.80
     ,'z-index'          : 10000001
   }).appendTo("body").fadeIn(200);
+}
+
+function removeFromAssetsControl(name) {
+  if (assetsControlSelect) {
+    if (assetsControlSelect.layers) {
+      assetsControlSelect.setLayer(_.filter(assetsControlSelect.layers,function(o){return o.name != name}));
+    }
+    else if (assetsControlSelect.layer && assetsControlSelect.layer.name == name) {
+      assetsControlSelect.setLayer([]);
+    }
+  }
+}
+
+function addToAssetsControl(l) {
+  if (!assetsControlSelect) {
+    assetsControlSelect = new OpenLayers.Control.SelectFeature(l,{
+       clickout     : true
+      ,toggle       : false
+      ,multiple     : false
+      ,hover        : false
+      ,autoActivate : true
+    });    
+    map.addControl(assetsControlSelect);
+  }
+  else {
+    // filter out any existing layers from the incoming list -- don't add the same layer > 1
+    l = _.filter(l,function(o){return !_.findWhere(assetsControlSelect.layers,{name : o.name})});
+    if (assetsControlSelect.layers) {
+      assetsControlSelect.setLayer(l.concat(assetsControlSelect.layers));
+    }
+    else {
+      assetsControlSelect.setLayer(l.concat(assetsControlSelect.layer));
+    }
+  }
+  for (var j = 0; j < l.length; j++) {
+    if (l[j].events.listeners.featureselected) {
+      continue;
+    }
+    l[j].events.on({
+      featureselected : function(e) {
+        if (!e.feature.attributes.table) {
+          var tr = ['<thead><tr><th colspan=3>' + e.feature.attributes.name + '</th></tr></thead>'];
+          for (var i = 0; i < Math.min(20,e.feature.attributes.props.length); i++) {
+            tr.push('<tr><td>' + e.feature.attributes.props[i].name + '</td><td id="' + e.feature.id + '.' + e.feature.attributes.props[i].name + '.t' + '"></td><td id="' + e.feature.id + '.' + e.feature.attributes.props[i].name + '.v' + '"></td></tr>');
+            getObs(e.feature.id,e.feature.attributes.props[i].name,e.feature.attributes.props[i].latest);
+          }
+          var table = '<table class="popup">' + tr.join('') + '</table>';
+          e.feature.attributes.table = table;
+        }
+        popup(e.feature.geometry.getCentroid(),{html : e.feature.attributes.table,closable : true});
+      }
+      ,featureunselected : function(e) {
+        if (map.popup) {
+          map.removePopup(map.popup);
+          map.popup.destroy();
+          delete map.popup;
+        }
+      }
+    });
+  }
+}
+
+function popup(center,data) {
+  map.popup = new OpenLayers.Popup.FramedCloud(
+     'popup'
+    ,new OpenLayers.LonLat(center.x,center.y)
+    ,null
+    ,data.html
+    ,null
+    ,data.closable
+    ,function(e) {
+      map.removePopup(map.popup);
+      map.popup.destroy();
+      delete map.popup;
+      assetsControlSelect.unselectAll();
+      OpenLayers.Event.stop(e);
+    }
+  );
+  map.addPopup(map.popup,true);
 }

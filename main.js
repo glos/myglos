@@ -800,6 +800,7 @@ function getObs(f,prop,url) {
       }
       else {
         $("[id='" + this.id + "." + this.prop + ".t']").html('<font color=lightgray>no&nbsp;data</font>');
+        $("[id='" + this.id + "." + this.prop + ".v']").html('&nbsp;');
       }
       _.findWhere(this.f.attributes.props,{name : this.prop}).t = $("[id='" + this.id + "." + this.prop + ".t']").html();
       _.findWhere(this.f.attributes.props,{name : this.prop}).v = $("[id='" + this.id + "." + this.prop + ".v']").html();
@@ -1157,10 +1158,10 @@ function addToAssetsControl(l) {
 function popup(f) {
   var tr = ['<thead><tr><th colspan=3>' + f.attributes.name + '</th></tr></thead>'];
   for (var i = 0; i < Math.min(50,f.attributes.props.length); i++) {
-    var t = f.attributes.props[i].t ? f.attributes.props[i].t : '<img width=20 height=20 src="img/loading.gif">';
-    var v = f.attributes.props[i].v ? f.attributes.props[i].v : '&nbsp;';
+    var t = f.attributes.props[i].t ? f.attributes.props[i].t : '&nbsp;';
+    var v = f.attributes.props[i].v ? f.attributes.props[i].v : '<img width=20 height=20 src="img/loading.gif">';
     tr.push('<tr><td>' + f.attributes.props[i].name + '</td><td class="popupDate" id="' + f.id + '.' + f.attributes.props[i].name + '.t' + '">' + t + '</td><td class="popupValue" id="' + f.id + '.' + f.attributes.props[i].name + '.v' + '">' + v + '</td></tr>');
-    if (t == '<img width=20 height=20 src="img/loading.gif">' && v == '&nbsp;') {
+    if (t == '&nbsp;' && v == '<img width=20 height=20 src="img/loading.gif">') {
       getObs(f,f.attributes.props[i].name,f.attributes.props[i].latestUrl);
     }
   }

@@ -667,6 +667,9 @@ function addObs(d) {
   lyr.activeQuery = 0;
   map.zoomToExtent(d.bbox);
 
+  // nudge the map a little to get the popup out from under the time slider
+  map.pan(0,map.getSize().h > 150 ? 130 : 0);
+
   var center = lyr.bbox.getCenterLonLat();
 
   var f = new OpenLayers.Feature.Vector(
@@ -1183,5 +1186,6 @@ function popup(f) {
   );
   map.popup.minSize = new OpenLayers.Size(400,400);
   map.popup.maxSize = new OpenLayers.Size(400,400);
+  map.popup.panMapIfOutOfView = false;
   map.addPopup(map.popup,true);
 }

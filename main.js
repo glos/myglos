@@ -87,7 +87,7 @@ function prepareAddToMap() {
 function addToMap(svc,c,lyrName) {
   var obs = /sos/i.test(svc);
   var lc = 0;
-  if (_.isEmpty(map.getLayersByName(c.name + '-' + lyrName))) {
+  if (_.isEmpty(map.getLayersByName(c.name + (obs ? '' : '-' + lyrName)))) {
     if (!mapDate) {
       mapDate = c.times ? isoDateToDate(c.times[c.times.length - 1]) : isoDateToDate(c.temporal[0]);
     }
@@ -373,9 +373,11 @@ function makeCatalog(data) {
 
     var svc = _.findWhere(o.services,{id : 'OGC-WMS'});
     var op  = svc && _.findWhere(svc.operations,{name : 'GetCapabilities'});
+    var isSos = false;
     if (!svc && !op) {
       svc = _.findWhere(o.services,{id : 'SOS'});
       op  = svc && _.findWhere(svc.operations,{name : 'GetObservation'});
+      isSos = true;
     }
     if (svc && op) {
       d.url = op.url;
@@ -385,7 +387,7 @@ function makeCatalog(data) {
             name2Color[o[0]] = buttonClasses[_.size(name2Color) % buttonClasses.length];
           }
           d.layers[o[1]] = '';
-          layers.push('<a href="#" data-svc-type="' + svc.id + '" data-idx="' + d.idx + '" data-name="' + o[1] + '" class="btn btn-' + name2Color[o[0]] + '">' + o[0] + '</a>');
+          layers.push('<a href="#" data-svc-type="' + svc.id + '" data-idx="' + d.idx + '" data-name="' + o[1] + '" class="btn btn-' + (isSos ? buttonClasses[0] : name2Color[o[0]]) + '">' + (isSos ? 'Add to map' : o[0]) + '</a>');
         }
       });
     }
@@ -418,7 +420,7 @@ function makeCatalog(data) {
     var thumb = '<img width=60 height=60 src="' + src + '" title="Data boundaries" alt="Data boundaries">';
     var abstract = !_.isEmpty(d.abstract) ? '<p>' + d.abstract + '</p>' : '';
     // d.tr = ['<div class="thumbnail">' + thumb + '</div><div class="title">' + d.name + '</div><br />' + abstract + '<div class="time-range"><div class="time-range-label"><span class="glyphicon glyphicon-time"></span>Time Range</div><input type="text" name="timeRange" value="' + d.tSpan + '" disabled class="form-control"></div><div class="download-data"><a target=_blank href="' + d.url + '" title="Download Data"><span class="glyphicon glyphicon-download"></span>Download Data</a></div>' + layers.join(' ')];
-    d.tr = ['<div class="thumbnail">' + thumb + '</div><div class="title">' + d.name + '</div><br />' + abstract + '<div class="time-range"><div class="time-range-label"><span class="glyphicon glyphicon-time"></span>Time Range</div><input type="text" name="timeRange" value="' + d.tSpan + '" disabled class="form-control"></div><div class="download-data"><a target=_blank href="' + d.url + '" title="Download Data"><span class="glyphicon glyphicon-download"></span>Download Data</a></div>' + layers.join(' ')];
+    d.tr = ['<div class="thumbnail">' + thumb + '</div><div class="title">' + d.name + '</div><br />' + abstract + '<div class="time-range"><div class="time-range-label"><span class="glyphicon glyphicon-time"></span>Time Range</div><input type="text" name="timeRange" value="' + d.tSpan + '" disabled class="form-control"></div><div class="download-data"><a target=_blank href="' + d.url + '" title="Download Data"><span class="glyphicon glyphicon-download"></span>Download Data</a></div>' + layers.splice(0,isSos ? 1 : layers.length).join(' ')];
     catalog.push(d);
   });
   return catalog;
@@ -754,6 +756,11 @@ function clearMap() {
   $('#active-layers table thead th:last-child').css('width', '30px');
   if ($('#time-slider-wrapper').is(':visible')) {
     $('#time-slider-wrapper').toggle();
+  }
+  if (map.popup) {
+    map.removePopup(map.popup);
+    map.popup.destroy();
+    delete map.popup;
   }
   mapDate = false;
 }

@@ -455,3 +455,15 @@ button.btn.dropdown-toggle.selectpicker.btn-default {
 .popupValue {
   width: 90px;
 }
+
+#catalogue .input-group {
+	width: 265px;
+	float: right;
+	padding-top: 14px;
+}
+
+#catalogue .input-group .form-control {
+	height: 31px;
+	width: 200px;
+	float: right;
+}

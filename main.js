@@ -1175,7 +1175,7 @@ function popup(f) {
      'popup'
     ,new OpenLayers.LonLat(center.x,center.y)
     ,null
-    ,'<table id="popup">' + tr.join('') + '</table>'
+    ,'<table id="popup" class="table table-hover">' + tr.join('') + '</table>'
     ,null
     ,true
     ,function(e) {

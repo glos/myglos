@@ -68,7 +68,8 @@ function fixCellWidth() {
 window.onresize = resize;
 
 function categoryClick() {
-  runQuery();
+  $(".input-group input").val('');
+  runQuery($('#categories.btn-group input:checked').attr('id'));
 }
 
 function prepareAddToMap() {
@@ -152,6 +153,18 @@ $(document).ready(function() {
     i++;
   });
   $('#categories.btn-group input').on('change', categoryClick);
+
+  $(".input-group input").keypress(function(e) {
+    if (e.which == 13) {
+      $('.input-group button').trigger('click');
+    }
+  });
+
+  $('.input-group button').click(function() {
+    $('#categories.btn-group .btn').removeClass('active');
+    $('#categories.btn-group input').removeAttr('checked');
+    runQuery($(".input-group input").val());
+  });
 
   $('ul.nav li:first-child a').on('click', function(e){
     e.preventDefault();
@@ -426,7 +439,7 @@ function makeCatalog(data) {
   return catalog;
 }
 
-function runQuery() {
+function runQuery(str) {
   $('#query-results').dataTable().fnDestroy();
   $('#query-results tbody').remove();
   $('#query-results').DataTable({
@@ -443,7 +456,7 @@ function runQuery() {
     ,ajax       : function (data,callback,settings) {
       var q = catalogQueryXML;
       q = q.replace('___LIMIT___',data.length).replace('___START___',data.start);
-      q = q.replace('___TEXTSEARCH___',1).replace('___ANYTEXT___',$('#categories.btn-group input:checked').attr('id'));
+      q = q.replace('___TEXTSEARCH___',1).replace('___ANYTEXT___',str);
       q = q.replace('___GEOSEARCH___',0);
       q = q.replace('___TEMPORALSEARCH___',0);
       q = q.replace(/___(WEST|EAST|NORTH|SOUTH)___/g,'0');

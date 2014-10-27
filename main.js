@@ -680,9 +680,6 @@ function addObs(d) {
   lyr.activeQuery = 0;
   map.zoomToExtent(d.bbox);
 
-  // nudge the map a little to get the popup out from under the time slider
-  map.pan(0,map.getSize().h > 150 ? 130 : 0);
-
   var center = lyr.bbox.getCenterLonLat();
 
   var f = new OpenLayers.Feature.Vector(
@@ -1161,13 +1158,15 @@ function addToAssetsControl(l) {
 }
 
 function popup(f) {
+  // fire getObs requests after showing the popup
+  var obs = [];
   var tr = ['<thead><tr><th colspan=3>' + f.attributes.name + '</th></tr></thead>'];
-  for (var i = 0; i < Math.min(50,f.attributes.props.length); i++) {
+  for (var i = 0; i < f.attributes.props.length; i++) {
     var t = f.attributes.props[i].t ? f.attributes.props[i].t : '&nbsp;';
     var v = f.attributes.props[i].v ? f.attributes.props[i].v : '<img width=20 height=20 src="img/loading.gif">';
     tr.push('<tr><td><a href="#" data-url="' + f.attributes.props[i].allUrl + '" data-prop="' + f.attributes.props[i].name + '" data-name="' + f.layer.name + '">' + f.attributes.props[i].name + '</a></td><td class="popupDate" id="' + f.id + '.' + f.attributes.props[i].name + '.t' + '">' + t + '</td><td class="popupValue" id="' + f.id + '.' + f.attributes.props[i].name + '.v' + '">' + v + '</td></tr>');
     if (t == '&nbsp;' && v == '<img width=20 height=20 src="img/loading.gif">') {
-      getObs(f,f.attributes.props[i].name,f.attributes.props[i].latestUrl);
+      obs.push(i);
     }
   }
   var center = f.geometry.getCentroid();
@@ -1190,6 +1189,10 @@ function popup(f) {
   map.popup.maxSize = new OpenLayers.Size(400,400);
   map.popup.panMapIfOutOfView = false;
   map.addPopup(map.popup,true);
+
+  for (var i = 0; i < obs.length; i++) {
+    getObs(f,f.attributes.props[obs[i]].name,f.attributes.props[obs[i]].latestUrl);
+  }
 
   $('#popup a').on('click',function() {
     graphObs($(this).data('prop'),$(this).data('url'),$(this).data('name'));

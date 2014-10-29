@@ -120,7 +120,8 @@ function addToMap(svc,c,lyrName) {
 
     var title = obs ? '' : 'title="<img src=\'' + getLayerLegend(lyrName) + '\' alt=\'\'>"';
     var ts = obs ? '' : '<span class="glyphicon glyphicon-time" name="' + lyrName + '"></span><input type="text" name="' + lyrName + '" value="" disabled class="form-control">';
-    var rowHtml = '<tr data-toggle="tooltip" data-placement="right" data-html="true" ' + title + '><td><div><p title="' + lyrName + '">' + lyrName + '</p>' + ts + '<a href="#" data-name="' + lyrName + '" data-toggle="modal" data-target="#layer-settings"><span class="glyphicon glyphicon-cog"></span><a href="#" title="Zoom To" data-name="' + lyrName + '"><span class="glyphicon glyphicon-zoom-in"></span><img src="./img/loading.gif"></a><a href="#" class="popover-link" data-toggle="popover" title="' + lyrName + '" data-html= "true"  data-name="' + lyrName + '" data-content="' + c.tSpan + '\n' + '<a target=\'_blank\' href=\'' + c.url + '\'>' + c.url + '</a>"><span class="glyphicon glyphicon-info-sign"></span></a></div></td>';
+    var dataUrl = 'http://data.glos.us/portal/xsl2html.php?xsl=xsl/glos.iso.xsl&id=' + encodeURIComponent(c.idx) + '&url=' + encodeURIComponent('http://user:glos@64.9.200.121:8984/rest/glos');
+    var rowHtml = '<tr data-toggle="tooltip" data-placement="right" data-html="true" ' + title + '><td><div><p title="' + lyrName + '">' + lyrName + '</p>' + ts + '<a href="#" data-name="' + lyrName + '" data-toggle="modal" data-target="#layer-settings"><span class="glyphicon glyphicon-cog"></span><a href="#" title="Zoom To" data-name="' + lyrName + '"><span class="glyphicon glyphicon-zoom-in"></span><img src="./img/loading.gif"></a><a href="#" class="popover-link" data-toggle="popover" title="' + lyrName + '" data-html= "true"  data-name="' + lyrName + '" data-content="' + c.tSpan + '\n' + '<a target=\'_blank\' href=\'' + dataUrl + '\'>' + dataUrl + '</a>"><span class="glyphicon glyphicon-info-sign"></span></a></div></td>';
     rowHtml += '<td class="checkbox-cell"><input type="checkbox" checked value="' + lyrName + '" /></td>';
     $('#active-layers table tbody').append(rowHtml);
     $('#active-layers input:checkbox').off('click');
@@ -432,8 +433,9 @@ function makeCatalog(data) {
       : 'https://maps.googleapis.com/maps/api/staticmap?key=AIzaSyBuB8P_e6vQcucjnE64Kh2Fwu6WzhMXZzI&path=weight:1|fillcolor:0x0000AA11|color:0x0000FFBB|' + d.spatial[1] + ',' + d.spatial[0] + '|' + d.spatial[1] + ',' + d.spatial[2] + '|' + d.spatial[3] + ',' + d.spatial[2] + '|' + d.spatial[3] + ',' + d.spatial[0] + '|' + d.spatial[1] + ',' + d.spatial[0] + '&size=60x60&sensor=false';
     var thumb = '<img width=60 height=60 src="' + src + '" title="Data boundaries" alt="Data boundaries">';
     var abstract = !_.isEmpty(d.abstract) ? '<p>' + d.abstract + '</p>' : '';
-    // d.tr = ['<div class="thumbnail">' + thumb + '</div><div class="title">' + d.name + '</div><br />' + abstract + '<div class="time-range"><div class="time-range-label"><span class="glyphicon glyphicon-time"></span>Time Range</div><input type="text" name="timeRange" value="' + d.tSpan + '" disabled class="form-control"></div><div class="download-data"><a target=_blank href="' + d.url + '" title="Download Data"><span class="glyphicon glyphicon-download"></span>Download Data</a></div>' + layers.join(' ')];
-    d.tr = ['<div class="thumbnail">' + thumb + '</div><div class="title">' + d.name + '</div><br />' + abstract + '<div class="time-range"><div class="time-range-label"><span class="glyphicon glyphicon-time"></span>Time Range</div><input type="text" name="timeRange" value="' + d.tSpan + '" disabled class="form-control"></div><div class="download-data"><a target=_blank href="' + d.url + '" title="Download Data"><span class="glyphicon glyphicon-download"></span>Download Data</a></div>' + layers.splice(0,isSos ? 1 : layers.length).join(' ')];
+    var dataUrl = 'http://data.glos.us/portal/xsl2html.php?xsl=xsl/glos.iso.xsl&id=' + encodeURIComponent(d.idx) + '&url=' + encodeURIComponent('http://user:glos@64.9.200.121:8984/rest/glos');
+    // d.tr = ['<div class="thumbnail">' + thumb + '</div><div class="title">' + d.name + '</div><br />' + abstract + '<div class="time-range"><div class="time-range-label"><span class="glyphicon glyphicon-time"></span>Time Range</div><input type="text" name="timeRange" value="' + d.tSpan + '" disabled class="form-control"></div><div class="download-data"><a target=_blank href="' + dataUrl + '" title="Access Data"><span class="glyphicon glyphicon-download"></span>Access Data</a></div>' + layers.join(' ')];
+    d.tr = ['<div class="thumbnail">' + thumb + '</div><div class="title">' + d.name + '</div><br />' + abstract + '<div class="time-range"><div class="time-range-label"><span class="glyphicon glyphicon-time"></span>Time Range</div><input type="text" name="timeRange" value="' + d.tSpan + '" disabled class="form-control"></div><div class="download-data"><a target=_blank href="' + dataUrl + '" title="Access Data"><span class="glyphicon glyphicon-download"></span>Access Data</a></div>' + layers.splice(0,isSos ? 1 : layers.length).join(' ')];
     catalog.push(d);
   });
   return catalog;
@@ -450,7 +452,7 @@ function runQuery(str) {
     ,iDisplayLength : 50
     ,sScrollY       : $(window).height() - activeMapLayersTableOffset - queryResultsFooterOffset
     ,fnDrawCallback : function() {
-      $('#results .table-wrapper td a').on('click', prepareAddToMap);
+      $('#results .table-wrapper td a[href="#"]').on('click',prepareAddToMap);
       $('.dataTables_scrollHead').hide();
     }
     ,ajax       : function (data,callback,settings) {
